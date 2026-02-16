@@ -35,7 +35,7 @@ python app.py
 ## 🌐 Deployment
 Deployed using Render
 Live API Link:
-https://expense-tracker-api.onrender.com
+https://expense-tracker-api-1-2n5r.onrender.com/expenses
 ---
 ## 📌 Author
 Ramya Sree
