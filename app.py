@@ -14,6 +14,22 @@ def get_db_connection():
     return conn
 
 
+# ---------- CREATE TABLE (IMPORTANT FOR RENDER) ----------
+def create_table():
+    conn = get_db_connection()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            amount REAL NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+create_table()
+
+
 # ---------- HOME ROUTE ----------
 @app.route("/")
 def home():
@@ -60,7 +76,7 @@ def delete_expense(id):
     return jsonify({"message": "Expense deleted successfully"})
 
 
-# ---------- RUN APP (IMPORTANT FOR RENDER) ----------
+# ---------- RUN APP ----------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
