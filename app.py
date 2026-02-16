@@ -6,13 +6,11 @@ app = Flask(__name__)
 
 DATABASE = "expenses.db"
 
-
 # ---------- DATABASE CONNECTION ----------
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
-
 
 # ---------- CREATE TABLE ----------
 def create_table():
@@ -30,12 +28,10 @@ def create_table():
 
 create_table()
 
-
 # ---------- HOME ROUTE ----------
 @app.route("/")
 def home():
     return "Expense Tracker API is Running Successfully 🚀"
-
 
 # ---------- ADD EXPENSE ----------
 @app.route("/add", methods=["POST"])
@@ -56,7 +52,6 @@ def add_expense():
 
     return jsonify({"message": "Expense added successfully"})
 
-
 # ---------- GET ALL EXPENSES ----------
 @app.route("/expenses", methods=["GET"])
 def get_expenses():
@@ -65,7 +60,6 @@ def get_expenses():
     conn.close()
 
     return jsonify([dict(expense) for expense in expenses])
-
 
 # ---------- DELETE EXPENSE ----------
 @app.route("/delete/<int:id>", methods=["DELETE"])
@@ -77,32 +71,25 @@ def delete_expense(id):
 
     return jsonify({"message": "Expense deleted successfully"})
 
-
-# ---------- SHOW TOTAL ----------
+# ---------- TOTAL EXPENSE ----------
 @app.route("/total", methods=["GET"])
-def show_total():
+def total_expense():
     conn = get_db_connection()
-    total = conn.execute("SELECT SUM(amount) FROM expenses").fetchone()[0]
+    total = conn.execute("SELECT SUM(amount) as total FROM expenses").fetchone()
     conn.close()
 
-    if total is None:
-        total = 0
-
-    return jsonify({"Total Expense": total})
-
+    return jsonify({"total": total["total"] if total["total"] else 0})
 
 # ---------- FILTER BY CATEGORY ----------
-@app.route("/category/<string:cat>", methods=["GET"])
-def filter_category(cat):
+@app.route("/category/<string:category>", methods=["GET"])
+def filter_category(category):
     conn = get_db_connection()
     expenses = conn.execute(
-        "SELECT * FROM expenses WHERE category = ?",
-        (cat,),
+        "SELECT * FROM expenses WHERE category = ?", (category,)
     ).fetchall()
     conn.close()
 
     return jsonify([dict(expense) for expense in expenses])
-
 
 # ---------- RUN APP ----------
 if __name__ == "__main__":
