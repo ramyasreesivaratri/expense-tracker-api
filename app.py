@@ -14,14 +14,15 @@ def get_db_connection():
     return conn
 
 
-# ---------- CREATE TABLE (IMPORTANT FOR RENDER) ----------
+# ---------- CREATE TABLE ----------
 def create_table():
     conn = get_db_connection()
     conn.execute("""
         CREATE TABLE IF NOT EXISTS expenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
-            amount REAL NOT NULL
+            amount REAL NOT NULL,
+            category TEXT NOT NULL
         )
     """)
     conn.commit()
@@ -43,11 +44,12 @@ def add_expense():
 
     title = data.get("title")
     amount = data.get("amount")
+    category = data.get("category")
 
     conn = get_db_connection()
     conn.execute(
-        "INSERT INTO expenses (title, amount) VALUES (?, ?)",
-        (title, amount),
+        "INSERT INTO expenses (title, amount, category) VALUES (?, ?, ?)",
+        (title, amount, category),
     )
     conn.commit()
     conn.close()
@@ -74,6 +76,32 @@ def delete_expense(id):
     conn.close()
 
     return jsonify({"message": "Expense deleted successfully"})
+
+
+# ---------- SHOW TOTAL ----------
+@app.route("/total", methods=["GET"])
+def show_total():
+    conn = get_db_connection()
+    total = conn.execute("SELECT SUM(amount) FROM expenses").fetchone()[0]
+    conn.close()
+
+    if total is None:
+        total = 0
+
+    return jsonify({"Total Expense": total})
+
+
+# ---------- FILTER BY CATEGORY ----------
+@app.route("/category/<string:cat>", methods=["GET"])
+def filter_category(cat):
+    conn = get_db_connection()
+    expenses = conn.execute(
+        "SELECT * FROM expenses WHERE category = ?",
+        (cat,),
+    ).fetchall()
+    conn.close()
+
+    return jsonify([dict(expense) for expense in expenses])
 
 
 # ---------- RUN APP ----------
