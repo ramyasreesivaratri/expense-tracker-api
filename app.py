@@ -1,0 +1,145 @@
+from flask import Flask, request, jsonify
+import sqlite3
+
+app = Flask(__name__)
+
+DATABASE = "expenses.db"
+
+
+def get_db_connection():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def create_table():
+    conn = get_db_connection()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+create_table()
+
+
+@app.route("/")
+def home():
+    return jsonify({
+        "message": "Expense Tracker API Running Successfully 🚀"
+    }), 200
+
+
+# ---------------- ADD ---------------- #
+
+@app.route("/add", methods=["POST"])
+def add_expense():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    title = data.get("title")
+    amount = data.get("amount")
+    category = data.get("category")
+
+    if not title or not category:
+        return jsonify({"error": "Title and Category are required"}), 400
+
+    if not isinstance(amount, (int, float)) or amount <= 0:
+        return jsonify({"error": "Amount must be positive"}), 400
+
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO expenses (title, amount, category) VALUES (?, ?, ?)",
+        (title, amount, category)
+    )
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Expense Added Successfully"}), 201
+
+
+# ---------------- GET ALL ---------------- #
+
+@app.route("/expenses", methods=["GET"])
+def get_expenses():
+    conn = get_db_connection()
+    expenses = conn.execute("SELECT * FROM expenses").fetchall()
+    conn.close()
+
+    return jsonify([dict(row) for row in expenses]), 200
+
+
+# ---------------- UPDATE ---------------- #
+
+@app.route("/update/<int:id>", methods=["PUT"])
+def update_expense(id):
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    title = data.get("title")
+    amount = data.get("amount")
+    category = data.get("category")
+
+    if not title or not category:
+        return jsonify({"error": "Title and Category required"}), 400
+
+    if not isinstance(amount, (int, float)) or amount <= 0:
+        return jsonify({"error": "Amount must be positive"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.execute(
+        "UPDATE expenses SET title=?, amount=?, category=? WHERE id=?",
+        (title, amount, category, id)
+    )
+    conn.commit()
+
+    if cursor.rowcount == 0:
+        conn.close()
+        return jsonify({"error": "Expense not found"}), 404
+
+    conn.close()
+    return jsonify({"message": "Expense Updated Successfully"}), 200
+
+
+# ---------------- DELETE ---------------- #
+
+@app.route("/delete/<int:id>", methods=["DELETE"])
+def delete_expense(id):
+    conn = get_db_connection()
+    cursor = conn.execute("DELETE FROM expenses WHERE id=?", (id,))
+    conn.commit()
+
+    if cursor.rowcount == 0:
+        conn.close()
+        return jsonify({"error": "Expense not found"}), 404
+
+    conn.close()
+    return jsonify({"message": "Expense Deleted Successfully"}), 200
+
+
+# ---------------- TOTAL ---------------- #
+
+@app.route("/total", methods=["GET"])
+def get_total():
+    conn = get_db_connection()
+    total = conn.execute("SELECT SUM(amount) FROM expenses").fetchone()[0]
+    conn.close()
+
+    if total is None:
+        total = 0
+
+    return jsonify({"total_expense": total}), 200
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
