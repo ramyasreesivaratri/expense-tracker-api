@@ -3,14 +3,13 @@
 A simple REST API built using Flask to manage daily expenses.
 ---
 ## Features
-✔ Add Expense  
-✔ View Expenses  
-✔ Delete Expense  
-✔ Show Total  
-✔ Filter by Category  
+1. Add Expense  
+2. View Expenses  
+3. Delete Expense  
+4. Show Total  
+5. Filter by Category  
 ---
 ## Tech Stack
-
 - Python
 - Flask
 - SQLite
